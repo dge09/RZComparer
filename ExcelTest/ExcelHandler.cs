@@ -8,6 +8,5 @@ namespace ExcelTest
 {
     public interface ExcelHandler
     {
-
     }
 }

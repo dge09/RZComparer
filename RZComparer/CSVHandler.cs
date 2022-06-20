@@ -1,7 +1,6 @@
-﻿using System.IO;
-using System.Text;
+﻿using System.Text;
 
-namespace ExcelTest
+namespace RZComparer
 {
     public class CSVHandler
     {

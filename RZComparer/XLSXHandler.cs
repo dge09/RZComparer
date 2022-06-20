@@ -1,10 +1,7 @@
-﻿using ClosedXML;
-using ClosedXML.Excel;
-using System.Collections.Generic;
-using ExcelTest;
+﻿using ClosedXML.Excel;
 
 
-namespace ExcelTest;
+namespace RZComparer;
 
 public class XLSXHandler : ExcelHandler
 {    

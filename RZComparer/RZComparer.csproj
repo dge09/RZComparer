@@ -6,8 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageIcon>icon.jpg</PackageIcon>
-    <AssemblyName>EntranceCompare</AssemblyName>
+    <AssemblyName>RZComparer</AssemblyName>
     <ApplicationIcon>icon-fococlipping-standard.ico</ApplicationIcon>
+    <RootNamespace>RZComparer</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

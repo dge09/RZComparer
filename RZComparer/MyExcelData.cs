@@ -1,4 +1,4 @@
-﻿namespace ExcelTest
+﻿namespace RZComparer
 {
     public class MyExcelData
     {

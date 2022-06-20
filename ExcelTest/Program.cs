@@ -1,116 +1,156 @@
 ﻿using ExcelTest;
+using Spectre.Console;
 
 XLSXHandler xlsxHandler = new XLSXHandler();
 CSVHandler csvHandler = new CSVHandler();
 
-string generalPath = @"C:\Users\DominikG\OneDrive\02_GW\IT-Datacenter\2_1\Projekt_Zutrittskontrolle\Zutrittslisten\2021_4.Quartal";
+Console.WriteLine("Enter path with files to check and press \"Enter\"");
+string generalPath = Console.ReadLine();
+
+Console.WriteLine("");
+
+
+List<string> fileList = new List<string>(); // List of all files in directory
+List<MyExcelData> summaryList = new List<MyExcelData>(); // List with data from all temp lists
+List<MyExcelData> sharePointList = new List<MyExcelData>(); // list with sharepoint data
+List<MyExcelData> differencesList = new List<MyExcelData>(); // List with only the differences from sharepoint and other files
+
+List<MyExcelData> tempQRZ = new List<MyExcelData>(); // List used to store temporary QRZ Data
+List<MyExcelData> tempTAG = new List<MyExcelData>(); // List used to store temporary TAG Data
+List<MyExcelData> tempZAG = new List<MyExcelData>(); // List used to store temporary ZAG Data
+
+List<int> itemsToDelete = new List<int>(); // List with items to ignore in differences list
+
+fileList = Directory.GetFiles(generalPath).ToList<string>(); // get all files in directory
+
 string sharePointFile = null;
-string escapeReference;
-
-List<string> fileList = new List<string>();
-List<MyExcelData> finalList = new List<MyExcelData>();
-List<MyExcelData> sharePointList = new List<MyExcelData>();
-List<MyExcelData> differencesList = new List<MyExcelData>();
+string escapeReference; // last date to get in sharepoint file
 
 
-List<MyExcelData> tempQRZ = new List<MyExcelData>();
-List<MyExcelData> tempTAG = new List<MyExcelData>();
-List<MyExcelData> tempZAG = new List<MyExcelData>();
-
-fileList = Directory.GetFiles(generalPath).ToList<string>();
-
-foreach (var file in fileList)
+foreach (var file in fileList) // get data from files
 {
     if (file.Contains("QRZ"))
     {
-        tempQRZ = xlsxHandler.GetXlsxToList(file, 2, 1, 3);
+        tempQRZ = xlsxHandler.GetXlsxToList(file);
 
         foreach (var item in tempQRZ)
         {
-            finalList.Add(item);
+            summaryList.Add(item);
         }
-    }
+    } // get data from QRZ files and add data to summaryList
     else if (file.Contains("TAG"))
     {
-        tempTAG = xlsxHandler.GetXlsxToList(file, 17, 1, 9);
+        tempTAG = xlsxHandler.GetXlsxToList(file);
 
         foreach (var item in tempTAG)
         {
-            finalList.Add(item);
+            summaryList.Add(item);
         }
-    }
+    } // get data from TAG files and add data to summaryList
     else if (file.Contains("ZAG")) 
     {
         tempZAG = csvHandler.GetCsvToList(file, 9);
 
         foreach (var item in tempZAG)
         {
-            finalList.Add(item);
+            summaryList.Add(item);
         }
-    }
+    } // get data from ZAG files and add data to summaryList
     else if (file.Contains("Anmeldungen_Sharepoint"))
     {
         sharePointFile = file;
-    }
-
+    } // get sharepoint file name
 }
 
-finalList = finalList.DistinctBy(d => new { d.Date, d.User }).ToList();
+// make list distinct and sort Date ascending
+summaryList = summaryList.DistinctBy(d => new { d.Date, d.User }).ToList();
+summaryList.Sort((x, y) => DateTime.Compare(DateTime.Parse(x.Date), DateTime.Parse(y.Date)));
 
-escapeReference = xlsxHandler.GetEarlyestDate(finalList);
-sharePointList = xlsxHandler.GetXlsxToList(sharePointFile, escapeReference, 2, 2, 4, 3);
+// get earlyest date in summary list to check how much of the sharepoint file is needed
+escapeReference = xlsxHandler.GetEarlyestDate(summaryList);
 
-sharePointList.Sort((x, y) => y.Date.CompareTo(x.Date));
+// get sharepoint data
+sharePointList = xlsxHandler.GetXlsxToList(sharePointFile, escapeReference);
+
+// make list distinct and sort Date ascending
 sharePointList = sharePointList.DistinctBy(d => new { d.Date, d.User }).ToList();
+sharePointList.Sort((x, y) => DateTime.Compare(DateTime.Parse(x.Date), DateTime.Parse(y.Date)));
 
 
+// needed to use .max function
+itemsToDelete.Add(0);
 
-List<int> testToDel = new List<int>();
 
-for (int i = 0; i < finalList.Count(); i++)
+for (int i = 0; i < summaryList.Count(); i++) 
 {
+    int j = 0;
     foreach (var shareItem in sharePointList)
     {
-        if (finalList[i].Date == shareItem.Date && finalList[i].User == shareItem.User && finalList[i].RZ == shareItem.RZ)
+        if (j >= itemsToDelete.Max())
         {
-            testToDel.Add(i);
+            //if (DateTime.Parse(finalList[i].Date).Date > DateTime.Parse(shareItem.Date).Date) break;
+
+            if (summaryList[i].Date == shareItem.Date && summaryList[i].User == shareItem.User && summaryList[i].RZ == shareItem.RZ)
+            {
+                itemsToDelete.Add(i);
+            }
+            else if (summaryList[i].Date == shareItem.Date && summaryList[i].User == "mitarbeiter" && summaryList[i].RZ == shareItem.RZ)
+            {
+                itemsToDelete.Add(i);
+            }
+            else if (summaryList[i].Date == shareItem.Date && summaryList[i].User == "cust. delivery coord/nord 2/west (feldk) organisationseinheit" && summaryList[i].RZ == shareItem.RZ)
+            {
+                itemsToDelete.Add(i);
+            }
         }
-    }
-}
 
-for (int i = 0; i < finalList.Count(); i++)
+        if (DateTime.Parse(summaryList[i].Date).Date < DateTime.Parse(shareItem.Date).Date) break;
+
+        j++;
+    }
+} // Check for differences
+
+for (int i = 0; i < summaryList.Count(); i++) 
 {
-    if (!testToDel.Contains(i))
+    if (!itemsToDelete.Contains(i))
     {
-        differencesList.Add(finalList[i]);
+        differencesList.Add(summaryList[i]);
     }
-}
+} // get list with only differences
 
 
+// create file with final data and get name of file
 generalPath = xlsxHandler.CreateWriteCheckFile(differencesList, sharePointList, generalPath);
 
+// show collected data in Terminal
+if (File.Exists(generalPath))
+{
+    Console.WriteLine("New File created: ");
+    Console.WriteLine(generalPath);
+}
+
 Console.WriteLine();
+Console.WriteLine("Following differences found:");
 
-if (File.Exists(generalPath)) Console.WriteLine("New File created: " + generalPath);
+var table = new Table();
 
+table.Border(TableBorder.Rounded);
 
+table.AddColumn("Date:");
+table.AddColumn(new TableColumn("User"));
+table.AddColumn(new TableColumn("RZ"));
 
+foreach (var item in differencesList)
+{
+    table.AddRow(item.Date, item.User, item.RZ);
+}
 
-
-
-
-
-
-
+AnsiConsole.Write(table);
 
 Console.ReadKey();
 
 
 
-
-
-// lst kann auch xlsx sein      
-// Mitarbeiter einfach auf Tag und Mitarbeiter prüfen
 
 
 

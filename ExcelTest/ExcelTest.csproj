@@ -5,11 +5,26 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackageIcon>icon.jpg</PackageIcon>
+    <AssemblyName>EntranceCompare</AssemblyName>
+    <ApplicationIcon>icon-fococlipping-standard.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="icon-fococlipping-standard.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\icon.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.95.4" />
     <PackageReference Include="Microsoft.Office.Interop.Excel" Version="12.0.4518.1014" />
+    <PackageReference Include="Spectre.Console" Version="0.44.0" />
   </ItemGroup>
 
 </Project>
